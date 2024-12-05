@@ -11,38 +11,10 @@
              (nongnu packages linux)
              (nongnu system linux-initrd)
              (wolff services)
-             (wolff packages))
+             (wolff packages)
+             (wolff channels))
 (use-service-modules admin networking ssh virtualization avahi web docker desktop dbus mcron shepherd certbot security)
 (use-package-modules base certs ssh avahi java admin glib docker matrix python version-control package-management)
-
-;; path needs to resolve relative to current dir and unattended upgrade context
-#| (define %channels
-  (eval-string (call-with-input-file (file-append (local-file "." "config-dir" #:recursive? #t) "/channels.scm") get-string-all)))
-|#
-
-;; TODO problems trying to keep one definition of channels:
-;; have to add the channels file to the store
-;; if referencing that file from this script, that path has to also work when doing the unattended upgrade
-;; (note: working directory of unattended upgrade is /root)
-(define %channels
-(cons* (channel
-        (name 'wolff)
-        (url "https://github.com/matthewjwolff/guix/")
-        (introduction
-         (make-channel-introduction
-          "8123e3e4a6317b88abf2451b9213e4a32ca1b9f8"
-          (openpgp-fingerprint
-           "EB4A 0F30 CFA5 E131 76BC  27ED C805 B448 ADCE 0850"))))
-       (channel
-        (name 'nonguix)
-        (url "https://gitlab.com/nonguix/nonguix")
-        ;; Enable signature verification:
-        (introduction
-         (make-channel-introduction
-          "897c1a470da759236cc11798f4e0a5f7d4d59fbc"
-          (openpgp-fingerprint
-           "2A39 3FFF 68F4 EF7A 3D29  12AF 6F51 20A0 22FB B2D5"))))
-       %default-channels))
 
 (define %config-dir (local-file "." "config-dir" #:recursive? #t))
 
@@ -106,24 +78,9 @@
                                    (unattended-upgrade-configuration
                                     ;; (schedule "*/20 * * * *") ;; every five minutes for testing
                                     (schedule "30 01 * * *")
-                                    ;; this expression, run by the build daemon, must create the channels
-                                    ;; it's *not* a filename which builds the channels, it's the channels themselves, so we must instruct the build daemon to execute a script (which we've added to the store)
-                                    #|
                                     (channels #~(begin
-                                                  (use-modules (ice-9 eval-string)
-                                                               (ice-9 textual-ports))
-                                    (eval-string (call-with-input-file #$(file-append (local-file "." "config-dir" #:recursive? #t) "/channels.scm") get-string-all))))
-                                    |#
-(channels #~(cons* (channel
-        (name 'nonguix)
-        (url "https://gitlab.com/nonguix/nonguix")
-        ;; Enable signature verification:
-        (introduction
-         (make-channel-introduction
-          "897c1a470da759236cc11798f4e0a5f7d4d59fbc"
-          (openpgp-fingerprint
-           "2A39 3FFF 68F4 EF7A 3D29  12AF 6F51 20A0 22FB B2D5"))))
-       %default-channels))
+                                                  (use-modules (wolff channels))
+                                                  %wolff-channels))
                                     ;; this file refers to others via local-file (namely nginx.conf), so add everything in "." directory to the store as config-dir, and reconfigure based on "/gnu/store/...config-dir/config.scm"
                                     (operating-system-file (file-append %config-dir "/config.scm"))))
                           (service ntp-service-type)
@@ -197,7 +154,7 @@ banaction_allports = nftables[type=allports]")))
                                                     (inherit config)
                                                     ;; documentation says this can be used to "pin its revision" (maybe this will make low-power devices not rebuild the package tree? but then how would it get packge updates?)
                                                     ;;(guix (guix-for-channels %channels))
-                                                    (channels %channels)
+                                                    (channels %wolff-channels)
                                                     (substitute-urls
                                                      (append (list "https://substitutes.nonguix.org")
                                                              %default-substitute-urls))
