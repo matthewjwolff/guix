@@ -10,7 +10,7 @@
             (make-channel-introduction
              "8123e3e4a6317b88abf2451b9213e4a32ca1b9f8"
              (openpgp-fingerprint
-              "EB4A 0F30 CFA5 E131 76BC  27ED C805 B448 ADCE 0850"))))
+              "873A 05AB 6B98 858E 0ECE  2683 E854 A44F 5C0D 16BA"))))
          (channel
           (name 'nonguix)
           (url "https://gitlab.com/nonguix/nonguix")
