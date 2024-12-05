@@ -8,7 +8,7 @@
            (url "https://github.com/matthewjwolff/guix/")
            (introduction
             (make-channel-introduction
-             "8123e3e4a6317b88abf2451b9213e4a32ca1b9f8"
+             "78005ce24942dcbbcafe6d92b8f1beac4f365ba3"
              (openpgp-fingerprint
               "873A 05AB 6B98 858E 0ECE  2683 E854 A44F 5C0D 16BA"))))
          (channel
