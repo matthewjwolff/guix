@@ -1,0 +1,36 @@
+diff --git a/authenticator.sh b/authenticator.sh
+index b19e533..5ee337f 100755
+--- a/authenticator.sh
++++ b/authenticator.sh
+@@ -8,6 +8,14 @@
+ # CERTBOT_KEY_PATH: The private key associated with the aforementioned SSL certificate (TLS-SNI-01 only)
+ # CERTBOT_SNI_DOMAIN: The SNI name for which the ACME server expects to be presented the self-signed certificate located at $CERTBOT_CERT_PATH (TLS-SNI-01 only)
+ 
++# guix hacks
++# put coreutils and python on path
++export PATH=/run/current-system/profile/bin:$PATH
++# make sure working directory is where this script is located so namecheap.py is found
++cd "$(dirname "$0")"
++# put credentials in environment
++export $(cat /home/mjw/namecheap.ini | xargs)
++
+ python3 -c "from namecheap import *; set_challenge_record()"
+ 
+ if [ "$CERTBOT_REMAINING_CHALLENGES" -eq 0 ]; then
+diff --git a/cleanup.sh b/cleanup.sh
+index d7065c7..bf22aa1 100755
+--- a/cleanup.sh
++++ b/cleanup.sh
+@@ -11,4 +11,12 @@
+ # Additionally for cleanup:
+ # CERTBOT_AUTH_OUTPUT: Whatever the auth script wrote to stdout
+ 
++# guix hacks
++# put coreutils and python on path
++export PATH=/run/current-system/profile/bin:$PATH
++# make sure working directory is where this script is located so namecheap.py is found
++cd "$(dirname "$0")"
++# put credentials in environment
++export $(cat /home/mjw/namecheap.ini | xargs)
++
+ python3 -c "from namecheap import *; remove_challenge_record()"
