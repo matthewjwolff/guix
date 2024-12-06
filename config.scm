@@ -2,6 +2,7 @@
              (gnu system nss)
              (guix build-system copy)
              (guix git-download)
+             (guix gexp)
              (guix packages)
              (guix licenses)
              (guix records)
@@ -76,11 +77,16 @@
                           (service avahi-service-type)
                           (service unattended-upgrade-service-type
                                    (unattended-upgrade-configuration
-                                    ;; (schedule "*/20 * * * *") ;; every five minutes for testing
+                                    ;;(schedule "*/5 * * * *") ;; every five minutes for testing
                                     (schedule "30 01 * * *")
+                                    ;; use system channels
+                                    ;; hack to work around api
+                                    ;; this gexp must return a list of channels, so it must eval the system script
                                     (channels #~(begin
-                                                  (use-modules (wolff channels))
-                                                  %wolff-channels))
+                                                 (use-modules (ice-9 eval-string)
+                                                              (ice-9 textual-ports)
+                                                              (guix channels))
+                                                 (eval-string (call-with-input-file "/etc/guix/channels.scm" get-string-all))))
                                     ;; this file refers to others via local-file (namely nginx.conf), so add everything in "." directory to the store as config-dir, and reconfigure based on "/gnu/store/...config-dir/config.scm"
                                     (operating-system-file (file-append %config-dir "/config.scm"))))
                           (service ntp-service-type)
