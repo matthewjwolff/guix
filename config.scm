@@ -11,6 +11,8 @@
              (ice-9 textual-ports)
              (nongnu packages linux)
              (nongnu system linux-initrd)
+             (sops services sops)
+             (sops secrets)
              (wolff services)
              (wolff packages)
              (wolff channels))
@@ -108,6 +110,7 @@ banaction_allports = nftables[type=allports]")))
                                                          (name "wolff.io") ;; provide a name to strip wildcard from paths
                                                          (domains '("*.wolff.io"))
                                                          (challenge "dns-01")
+                                                         ;; note: hidden dependency on namecheap.ini (managed by sops)
                                                          (authentication-hook (file-append certbot-namecheap-hook "/authenticator.sh"))
                                                          (cleanup-hook (file-append certbot-namecheap-hook "/cleanup.sh")))))))
 
@@ -122,6 +125,23 @@ banaction_allports = nftables[type=allports]")))
                           (service elogind-service-type) ;; required by docker
                           (service dbus-root-service-type) ;; required by elogind (probably?)
                           ;; etc-service-type can be used to populate /etc
+                          (service sops-secrets-service-type
+                                   (sops-service-configuration
+                                    (config (file-append %config-dir "/.sops.yaml"))
+                                    (secrets
+                                     (list
+                                      (sops-secret
+                                       (key '(nginx_htpasswd))
+                                       (file (file-append %config-dir "/secrets.yaml"))
+                                       (user "mjw")
+                                       (group "users")
+                                       (permissions #o400))
+                                      (sops-secret
+                                       (key '(namecheap_ini))
+                                       (file (file-append %config-dir "/secrets.yaml"))
+                                       (user "mjw")
+                                       (group "users")
+                                       (permissions #o400))))))
                           (service containerd-service-type)
                           (service docker-service-type)
                           #|
@@ -162,8 +182,11 @@ banaction_allports = nftables[type=allports]")))
                                                     ;;(guix (guix-for-channels %channels))
                                                     (channels %wolff-channels)
                                                     (substitute-urls
-                                                     (append (list "https://substitutes.nonguix.org")
-                                                             %default-substitute-urls))
+                                                     ;; put nonguix last
+                                                     ;; guix queries substitutes in order
+                                                     ;; since *most* operations will want free software, guix's substitutes probably have what they're looking for, so have those first in the list
+                                                     (append %default-substitute-urls
+                                                             (list "https://substitutes.nonguix.org")))
                                                     (authorized-keys
                                                      (append (list (plain-file "non-guix.pub"
                                                                                "(public-key

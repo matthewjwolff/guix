@@ -12,7 +12,7 @@ index b19e533..5ee337f 100755
 +# make sure working directory is where this script is located so namecheap.py is found
 +cd "$(dirname "$0")"
 +# put credentials in environment
-+export $(cat /home/mjw/namecheap.ini | xargs)
++export $(cat /run/secrets/namecheap.ini | xargs)
 +
  python3 -c "from namecheap import *; set_challenge_record()"
  
@@ -31,6 +31,6 @@ index d7065c7..bf22aa1 100755
 +# make sure working directory is where this script is located so namecheap.py is found
 +cd "$(dirname "$0")"
 +# put credentials in environment
-+export $(cat /home/mjw/namecheap.ini | xargs)
++export $(cat /run/secrets/namecheap.ini | xargs)
 +
  python3 -c "from namecheap import *; remove_challenge_record()"
