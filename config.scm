@@ -153,11 +153,13 @@ banaction_allports = nftables[type=allports]")))
                                               ("jellyfin_cache" . "/cache")
                                               ("/mnt" . "/opt")))))
                           |#
-                          (service docker-compose-service-type
-                                   (docker-compose-service-configuration
+                          (service docker-container-service-type
+                                   (docker-service-configuration
                                     (name 'jellyfin)
-                                    (user "mjw")
-                                    (compose-file (file-append %config-dir "/jellyfin-compose.yml"))))
+                                    (container "jellyfin/jellyfin")
+                                    (volumes '(("config" . "/config")
+                                               ("cache" . "/cache")))
+                                    (mounts '(("/mnt" . "/opt")))))
                           #| TODO matrix compose file refers to other files (files/homeserver.yaml)
                           (service docker-compose-service-type
                                    (docker-compose-service-configuration

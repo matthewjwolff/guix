@@ -34,8 +34,10 @@
          (auto-start? (docker-service-auto-start? config))
          (respawn? (docker-service-respawn? config))
          (start #~(make-forkexec-constructor
+                   ;; TODO if the container was started and stopped, run attempts to recreate the container, which will fail. need to either delete and recreate the container, or reuse the existing container
                    (list (string-append #$docker-cli "/bin/docker")
                          "run"
+                         "--rm"
                          "--name" #$(symbol->string (docker-service-name config))
                          "--net=host" ;; this doesn't support custom networks, you'd probably want a docker-compose file for that
                          #$@(apply append (map volume-to-arg (docker-service-volumes config)))
