@@ -1,11 +1,14 @@
 (define-module (wolff packages)
   #:use-module (guix build-system copy)
+  #:use-module (guix build-system gnu)
   #:use-module (guix gexp)
   #:use-module (guix git-download)
+  #:use-module (guix download)
   #:use-module (guix packages)
   #:use-module (guix records)
   #:use-module (guix licenses)
-  #:export (certbot-namecheap-hook))
+  #:export (certbot-namecheap-hook
+            mcrcon))
 
 (define certbot-namecheap-hook
   (package
@@ -24,4 +27,23 @@
    (license gpl3)
    (description "")
    (home-page "")))
+
+(define mcrcon
+  (package
+    (name "mcrcon")
+    (version "0.7.2")
+    (source
+     (origin
+       (method url-fetch)
+       (uri (string-append "https://github.com/Tiiffi/mcrcon/archive/v" version ".tar.gz"))
+       (sha256 "0w1jjy021d65vzsr5f73csw0q0cjgp5i2h2zh177f6q35mdb4hqp")))
+    (build-system gnu-build-system)
+    (arguments (list #:phases #~(modify-phases %standard-phases
+                                  (delete 'configure)
+                                  (delete 'check))
+                     #:make-flags #~(list (string-append "PREFIX=" #$output))))
+    (synopsis "")
+    (description "")
+    (home-page "https://github.com/Tiiffi/mcrcon")
+    (license zlib)))
 
