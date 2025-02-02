@@ -1,16 +1,76 @@
 (define-module (wolff services)
+  #:use-module (gnu packages base)
   #:use-module (gnu packages docker)
+  #:use-module (gnu packages tls)
   #:use-module (gnu packages version-control)
   #:use-module (gnu services)
   #:use-module (gnu services shepherd)
   #:use-module (gnu services mcron)
   #:use-module (guix records)
   #:use-module (guix gexp)
-  #:export (docker-service-configuration
+  #:use-module (wolff packages)
+  #:export (acme.sh-service-type
+            acme.sh-service-configuration
+            docker-service-configuration
             docker-container-service-type
             docker-compose-service-configuration
             docker-compose-service-type
             git-repo-service-type))
+
+
+(define-record-type* <acme.sh-service-configuration>
+  acme.sh-service-configuration make-acme.sh-service-configuration
+  acme.sh-service-configuration?
+  (certs acme.sh-configuration-certs))
+
+(define (acme.sh-activation config)
+  #~(begin
+      ;; TODO sops not built, so have to manage the secrets file manually
+      ;;(mkdir-p "/etc/acme.sh")
+      ;;(open-file "/etc/acme.sh/account.conf" "w")
+      ;; put things in account.conf
+      (use-modules (ice-9 ftw)) ;; scandir
+      (define dir-contents (scandir "/etc/acme.sh"))
+      (define (issue-cert cert-name)
+        (use-modules (srfi srfi-26)) ;; cut
+        (use-modules (srfi srfi-1)) ;; any
+        (unless (any (cut string-prefix? cert-name <>) dir-contents)
+          (system* (string-append #$acme.sh "/bin/acme.sh") "--config-home" "/etc/acme.sh" "issue" "-d" cert-name "--dns" "dns_namecheap" "--server" "letsencrypt")))
+      (map issue-cert #$(acme.sh-configuration-certs config))))
+
+(define (acme.sh-cron config)
+  ;; TODO is config necessary?
+  ;; TODO for now, hack together a job with coreutils in PATH
+  ;; because copy-build-system doesn't send a cross compiled coreutils (implicit input from gnu-build-system)
+  ;; can't use (system) because guile doesn't have a sh set up i guess
+  ;; TODO this works for --cron, but surely won't work for all the other undocumented dependencies acme.sh has
+      ;; their dockerfile lists some dependencies via apk
+      ;; it might work? the board was able to pull its own cert when run interactively
+  ;; note: these ungexps pull the right dependencies (cross compiled grep, coreutils)
+  ;; remember, only hand-writing the environment because copy-build-system pulls native dependencies instead of cross-compiled dependencies
+      ;; it really should be in the package, because these *are* the dependencies of the script
+  (list #~(job "30 1 * * *"
+               (lambda ()
+                 (let* ((progname (string-append #$acme.sh "/bin/acme.sh"))
+                        (coreutils-dir (string-append #$coreutils "/bin"))
+                        (grep-dir (string-append #$grep "/bin"))
+                        (openssl-dir (string-append #$openssl "/bin"))
+                        (environment (list (string-append "PATH=/bin" ;; for /bin/sh
+                                                          ":" coreutils-dir ;; various commands
+                                                          ":" grep-dir ;; grep
+                                                          ":" openssl-dir)))) ;; cert stuff
+                   (waitpid (spawn progname (list progname "--config-home" "/etc/acme.sh" "--cron") #:environment environment))))
+               "acme.sh renewal check")))
+
+(define acme.sh-service-type
+  (service-type
+   (name 'acme.sh-service)
+   (description "Manage certificates using acme.sh")
+   (extensions (list
+                ;;(service-extension activation-service-type acme.sh-activation)
+                (service-extension mcron-service-type acme.sh-cron)
+                ;; TODO make sure acme.sh is in the system profile
+                ))))
 
 (define-record-type* <docker-service-configuration>
   docker-service-configuration make-docker-service-configuration
