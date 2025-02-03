@@ -143,8 +143,10 @@ if your hardware is supported by one of the smaller firmware packages.")
  (name-service-switch %mdns-host-lookup-nss)
 
  ;; nvi cannot be cross compiled
+ ;; librsvg cannot be cross compiled (implicit dependency of guix icons and grub bootloader theme, only here to convert svg images to pngs)
+   ;; note: as long as the host has built guix-icons, deploy can reuse (since guix-icons building is the same for cross compiling, it's just to resize images)
  ;; TODO openssl is both a license and a package
- (packages (append (list acme.sh (@ (gnu packages tls) openssl)) (delete nvi %base-packages)))
+ (packages (append (list (@ (gnu packages tls) openssl)) (delete nvi %base-packages)))
 
  (services (append (list (service dhcp-client-service-type) ;; need a networking for ntp (and others)
                          ;;(service network-manager-service-type) ;; error building networkmanager
@@ -155,6 +157,18 @@ if your hardware is supported by one of the smaller firmware packages.")
                          (service nginx-service-type
                                   (nginx-configuration
                                    (server-blocks (list
+                                                   (nginx-server-configuration
+                                                    (server-name (list "minecraft.wolff.io"))
+                                                    (listen '("443 ssl"))
+                                                    (root "")
+                                                    (index '())
+                                                    (ssl-certificate "/etc/acme.sh/*.wolff.io_ecc/*.wolff.io.cer")
+                                                    (ssl-certificate-key "/etc/acme.sh/*.wolff.io_ecc/*.wolff.io.key")
+                                                    (locations (list
+                                                                (nginx-location-configuration
+                                                                 (uri "/")
+                                                                 (body (list "proxy_pass http://wolfftop.local:8100/ ;"
+                                                                             "proxy_set_header X-Forwarded-For $remote_addr ;"))))))
                                    (nginx-server-configuration
                                     (server-name (list "files.wolff.io"))
                                     (listen '("443 ssl"))
@@ -210,7 +224,7 @@ if your hardware is supported by one of the smaller firmware packages.")
                                               (guix-configuration
                                                (inherit config)
                                                (authorized-keys
-                                                (append (list (local-file "./noonietop.pub"))
+                                                (append (list (local-file "./wolfftop.pub"))
                                                         %default-authorized-guix-keys))))))))
 
 

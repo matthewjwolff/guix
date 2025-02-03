@@ -1,4 +1,5 @@
 (define-module (wolff packages)
+  #:use-module (guix build-system cargo)
   #:use-module (guix build-system copy)
   #:use-module (guix build-system gnu)
   #:use-module (guix gexp)
@@ -10,7 +11,8 @@
   #:use-module (guix licenses)
   #:export (certbot-namecheap-hook
             mcrcon
-            acme.sh))
+            acme.sh
+            lazymc))
 
 (define certbot-namecheap-hook
   (package
@@ -86,3 +88,19 @@
    (license gpl3)
    (description "Acme.sh is a pure shell implementation of the ACME protocol.")
    (home-page "https://github.com/acmesh-official/acme.sh")))
+
+(define lazymc
+  (package
+    (name "lazymc")
+    (version "0.2.11")
+    (source
+     (origin
+       (method url-fetch)
+       (uri (string-append "https://github.com/timvisee/lazymc/archive/refs/tags/v" version ".tar.gz"))
+       (sha256 "0khdyfklxafg3h44i4i1gr8a9axvmkdcvx8ca2pm5pjw7f8pdv8q")))
+    (build-system cargo-build-system)
+    (synopsis "")
+    (description "")
+    (home-page "https://github.com/timvisee/lazymc")
+    (license gpl3)))
+
