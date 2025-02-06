@@ -6,8 +6,9 @@
              (srfi srfi-1)
              (nongnu packages linux)
              (guix channels)
-             (wolff channels))
-(use-service-modules desktop sddm xorg ssh networking shepherd virtualization)
+             (wolff channels)
+             (wolff services))
+(use-service-modules desktop sddm xorg ssh networking shepherd virtualization docker)
 (use-package-modules gnome ssh admin fonts java)
 (use-package-modules qt xorg tmux linux package-management)
 
@@ -38,7 +39,7 @@
   (users (cons (user-account
                 (name "mjw")
                 (group "users")
-                (supplementary-groups '("wheel" "netdev"
+                (supplementary-groups '("wheel" "netdev" "docker"
                                         "audio" "video")))
                %base-user-accounts))
 
@@ -75,6 +76,15 @@
 
              (service nftables-service-type (nftables-configuration (ruleset (local-file "nftables.conf"))))
 
+                          (service containerd-service-type)
+                          (service docker-service-type)
+                          (service docker-container-service-type
+                                   (docker-service-configuration
+                                    (name 'jellyfin)
+                                    (container "jellyfin/jellyfin")
+                                    (volumes '(("config" . "/config")
+                                               ("cache" . "/cache")))
+                                    (mounts '(("/mnt" . "/opt")))))
              (service qemu-binfmt-service-type (qemu-binfmt-configuration (platforms (lookup-qemu-platforms "aarch64"))))
 
              (simple-service 'paper-1.21.4 shepherd-root-service-type

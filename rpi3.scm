@@ -169,6 +169,26 @@ if your hardware is supported by one of the smaller firmware packages.")
                                                                  (uri "/")
                                                                  (body (list "proxy_pass http://wolfftop.local:8100/ ;"
                                                                              "proxy_set_header X-Forwarded-For $remote_addr ;"))))))
+                                                   (nginx-server-configuration
+                                                    (server-name (list "jellyfin.wolff.io"))
+                                                    (listen '("443 ssl http2"))
+                                                   (root "")
+                                    (index '())
+                                    (ssl-certificate "/etc/acme.sh/*.wolff.io_ecc/*.wolff.io.cer")
+                                    (ssl-certificate-key "/etc/acme.sh/*.wolff.io_ecc/*.wolff.io.key")
+                                    (locations (list
+                                                (nginx-location-configuration
+                                                 (uri "/")
+                                                 (body (list "proxy_pass http://wolfftop.local:8096;"
+                                                             "proxy_pass_request_headers on;"
+                                                             "proxy_set_header Host $host;"
+                                                             "proxy_set_header X-Real-IP $remote_addr;"
+                                                             "proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;"
+                                                             "proxy_set_header X-Forwarded-Proto $scheme;"
+                                                             "proxy_set_header X-Forwarded-Host $http_host;"
+                                                             "proxy_set_header Upgrade $http_upgrade;"
+                                                             "proxy_set_header Connection $http_connection;"
+                                                             "proxy_buffering off;"))))))
                                    (nginx-server-configuration
                                     (server-name (list "files.wolff.io"))
                                     (listen '("443 ssl"))
@@ -178,7 +198,7 @@ if your hardware is supported by one of the smaller firmware packages.")
                                     (index '())
                                     (ssl-certificate "/etc/acme.sh/*.wolff.io_ecc/*.wolff.io.cer")
                                     (ssl-certificate-key "/etc/acme.sh/*.wolff.io_ecc/*.wolff.io.key")
-                                    (locations (list 
+                                    (locations (list
                                      (nginx-location-configuration
                                       (uri "/")
                                       (body (list "root /srv/web;"
