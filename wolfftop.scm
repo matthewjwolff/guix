@@ -7,6 +7,7 @@
              (nongnu packages linux)
              (guix channels)
              (wolff channels)
+             (wolff packages)
              (wolff services))
 (use-service-modules desktop sddm xorg ssh networking shepherd virtualization docker)
 (use-package-modules gnome ssh admin fonts java)
@@ -93,8 +94,9 @@
                                                      (auto-start? #f)
                                                      (respawn? #f)
                                                      (stop #~(make-kill-destructor #:grace-period 180))
+                                                     ;; TODO java path hardcoded in lazymc.toml
                                                      (start #~(make-forkexec-constructor
-                                                               (list (string-append #$openjdk21 "/bin/java") "-Xmx4092M" "-jar" "paper-1.21.4-128.jar" "nogui")
+                                                               (list (string-append #$lazymc "/bin/lazymc"))
                                                                #:user "mjw" #:group "users" #:directory "/home/mjw/paper-1.21.4")))))
 
 
