@@ -165,9 +165,13 @@ if your hardware is supported by one of the smaller firmware packages.")
                                                     (ssl-certificate-key "/etc/acme.sh/*.wolff.io_ecc/*.wolff.io.key")
                                                     (locations (list
                                                                 (nginx-location-configuration
+                                                                 (uri "= /502.html")
+                                                                 (body (list "root /srv/web;")))
+                                                                (nginx-location-configuration
                                                                  (uri "/")
                                                                  (body (list "proxy_pass http://wolfftop.local:8100/ ;"
-                                                                             "proxy_set_header X-Forwarded-For $remote_addr ;"))))))
+                                                                             "proxy_set_header X-Forwarded-For $remote_addr ;"
+                                                                             "error_page 502 /502.html ;"))))))
                                                    (nginx-server-configuration
                                                     (server-name (list "jellyfin.wolff.io"))
                                                     (listen '("443 ssl http2"))
