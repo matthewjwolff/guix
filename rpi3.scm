@@ -11,13 +11,13 @@
              (guix git-download)
              (guix build-system copy)
              (guix build-system gnu)
-             (guix licenses)
+             ((guix licenses) #:prefix license:)
              (wolff packages)
              (wolff services)
              (srfi srfi-1))
 
 (use-service-modules networking ssh avahi certbot web)
-(use-package-modules bootloaders ssh raspberry-pi package-management admin nvi emacs)
+(use-package-modules bootloaders ssh raspberry-pi package-management admin nvi emacs tls)
 
 (define-public raspberrypi-kernel-bin
 (package
@@ -55,7 +55,7 @@ and modules, userspace libraries, and bootloader/GPU firmware.")
   (home-page "https://github.com/raspberrypi/firmware")
   (supported-systems '("armhf-linux" "aarch64-linux"))
   (license
-    (list gpl2))))
+    (list license:gpl2))))
 
 
 ;; booted with manual steps
@@ -95,7 +95,7 @@ and modules, userspace libraries, and bootloader/GPU firmware.")
 hardware in the Linux kernel.  This is a large package which may be overkill
 if your hardware is supported by one of the smaller firmware packages.")
     (license
-     (list gpl2))))
+     (list license:gpl2))))
 
 (operating-system
  (host-name "pi")
@@ -145,8 +145,7 @@ if your hardware is supported by one of the smaller firmware packages.")
  ;; nvi cannot be cross compiled
  ;; librsvg cannot be cross compiled (implicit dependency of guix icons and grub bootloader theme, only here to convert svg images to pngs)
    ;; note: as long as the host has built guix-icons, deploy can reuse (since guix-icons building is the same for cross compiling, it's just to resize images)
- ;; TODO openssl is both a license and a package
- (packages (append (list (@ (gnu packages tls) openssl)) (delete nvi %base-packages)))
+ (packages (append (list openssl) (delete nvi %base-packages)))
 
  (services (append (list (service dhcp-client-service-type) ;; need a networking for ntp (and others)
                          ;;(service network-manager-service-type) ;; error building networkmanager
@@ -172,79 +171,59 @@ if your hardware is supported by one of the smaller firmware packages.")
                                                    (nginx-server-configuration
                                                     (server-name (list "jellyfin.wolff.io"))
                                                     (listen '("443 ssl http2"))
-                                                   (root "")
-                                    (index '())
-                                    (ssl-certificate "/etc/acme.sh/*.wolff.io_ecc/*.wolff.io.cer")
-                                    (ssl-certificate-key "/etc/acme.sh/*.wolff.io_ecc/*.wolff.io.key")
-                                    (locations (list
-                                                (nginx-location-configuration
-                                                 (uri "/")
-                                                 (body (list "proxy_pass http://wolfftop.local:8096;"
-                                                             "proxy_pass_request_headers on;"
-                                                             "proxy_set_header Host $host;"
-                                                             "proxy_set_header X-Real-IP $remote_addr;"
-                                                             "proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;"
-                                                             "proxy_set_header X-Forwarded-Proto $scheme;"
-                                                             "proxy_set_header X-Forwarded-Host $http_host;"
-                                                             "proxy_set_header Upgrade $http_upgrade;"
-                                                             "proxy_set_header Connection $http_connection;"
-                                                             "proxy_buffering off;"))))))
-                                   (nginx-server-configuration
-                                    (server-name (list "files.wolff.io"))
-                                    (listen '("443 ssl"))
-                                    ;; don't know what these two do, but it wasnt in the original config
-                                    ;; checking with web.scm, these are the sentinel values for each that disable the config line
-                                    (root "")
-                                    (index '())
-                                    (ssl-certificate "/etc/acme.sh/*.wolff.io_ecc/*.wolff.io.cer")
-                                    (ssl-certificate-key "/etc/acme.sh/*.wolff.io_ecc/*.wolff.io.key")
-                                    (locations (list
-                                     (nginx-location-configuration
-                                      (uri "/")
-                                      (body (list "root /srv/web;"
-                                                  "autoindex on;")))
-                                     (nginx-location-configuration
-                                      (uri "/private")
-                                      (body (list "alias /srv/web_private/;"
-                                                  "autoindex on;"
-                                                  "auth_basic \"Secure\";"
-                                                  ;; TODO htpasswd hidden dependency (but also a secret)
-                                                  "auth_basic_user_file /srv/htpasswd;"))))))))))
+                                                    (root "")
+                                                    (index '())
+                                                    (ssl-certificate "/etc/acme.sh/*.wolff.io_ecc/*.wolff.io.cer")
+                                                    (ssl-certificate-key "/etc/acme.sh/*.wolff.io_ecc/*.wolff.io.key")
+                                                    (locations (list
+                                                                (nginx-location-configuration
+                                                                 (uri "/")
+                                                                 (body (list "proxy_pass http://wolfftop.local:8096;"
+                                                                             "proxy_pass_request_headers on;"
+                                                                             "proxy_set_header Host $host;"
+                                                                             "proxy_set_header X-Real-IP $remote_addr;"
+                                                                             "proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;"
+                                                                             "proxy_set_header X-Forwarded-Proto $scheme;"
+                                                                             "proxy_set_header X-Forwarded-Host $http_host;"
+                                                                             "proxy_set_header Upgrade $http_upgrade;"
+                                                                             "proxy_set_header Connection $http_connection;"
+                                                                             "proxy_buffering off;"))))))
+                                                   (nginx-server-configuration
+                                                    (server-name (list "files.wolff.io"))
+                                                    (listen '("443 ssl"))
+                                                    ;; don't know what these two do, but it wasnt in the original config
+                                                    ;; checking with web.scm, these are the sentinel values for each that disable the config line
+                                                    (root "")
+                                                    (index '())
+                                                    (ssl-certificate "/etc/acme.sh/*.wolff.io_ecc/*.wolff.io.cer")
+                                                    (ssl-certificate-key "/etc/acme.sh/*.wolff.io_ecc/*.wolff.io.key")
+                                                    (locations (list
+                                                                (nginx-location-configuration
+                                                                 (uri "/")
+                                                                 (body (list "root /srv/web;"
+                                                                             "autoindex on;")))
+                                                                (nginx-location-configuration
+                                                                 (uri "/private")
+                                                                 (body (list "alias /srv/web_private/;"
+                                                                             "autoindex on;"
+                                                                             "auth_basic \"Secure\";"
+                                                                             ;; TODO htpasswd hidden dependency (but also a secret)
+                                                                             "auth_basic_user_file /srv/htpasswd;"))))))))))
                          (service acme.sh-service-type
                                   (acme.sh-service-configuration
                                    (certs '("*.wolff.io"))))
-
-                         ;; TODO hard stop: python build system does not support cross builds
-                         ;; (but it shouldn't need to, its python)
-                         ;; for now, work on making the main laptop fully reproducible with sops
-
-                         #|
-                         (service certbot-service-type
-                                   (certbot-configuration
-                                    (webroot "/var/www") ;; needs a non-#f webroot because of unconditional mkdir-p
-                                    (default-location #f)
-                                    (certificates (list (certificate-configuration
-                                                         (name "wolff.io") ;; provide a name to strip wildcard from paths
-                                                         (domains '("*.wolff.io"))
-                                                         (challenge "dns-01")
-                                                         ;; TODO certbot-namecheap-hook (patched) contains hidden dependency on /home/mjw/namecheap.ini (the secret credentials for my namecheap account)
-                                                         ;; should also be fixed with sops
-                                                         (authentication-hook (file-append certbot-namecheap-hook "/authenticator.sh"))
-                                                         (cleanup-hook (file-append certbot-namecheap-hook "/cleanup.sh")))))))
-                         |#
                          (service openssh-service-type
                                   (openssh-configuration
                                    (password-authentication? #t)
                                    (permit-root-login #t)
                                    (openssh openssh-sans-x)))
                          (service avahi-service-type))
-                   ;; make sure noonietop can continue to deploy things
-                         (modify-services %base-services
-                           (guix-service-type config =>
-                                              (guix-configuration
-                                               (inherit config)
-                                               (authorized-keys
-                                                (append (list (local-file "./wolfftop.pub"))
-                                                        %default-authorized-guix-keys))))))))
+                   (modify-services %base-services
+                     (guix-service-type config =>
+                                        (guix-configuration
+                                         (inherit config)
+                                         (authorized-keys
+                                          (append (list (local-file "./wolfftop.pub"))
+                                                  %default-authorized-guix-keys))))))))
 
 

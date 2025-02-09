@@ -1,6 +1,3 @@
-;; This is an operating system configuration template
-;; for a "desktop" setup with Plasma.
-
 (use-modules (gnu)
              (gnu system nss)
              (srfi srfi-1)
@@ -49,7 +46,6 @@
 
   ;; Allow resolution of '.local' host names with mDNS.
   (name-service-switch %mdns-host-lookup-nss)
-  ;; This is where we specify system-wide packages.
   (packages (cons* neofetch
                    htop
                    tmux
@@ -58,14 +54,6 @@
                    %base-packages))
 
   (services (cons*
-             ;; for debug
-             ;; (simple-service
-             ;;  'add-qt-debug-env
-             ;;  session-environment-service-type
-             ;;  '(("QT_MESSAGE_PATTERN"
-             ;;     . "[[%{time process} %{type}] %{appname}: %{category} %{function} - %{message}]")
-             ;;    ("QT_DEBUG_PLUGINS" . "1")
-             ;;    ("QML_IMPORT_TRACE" . "1")))
              (service openssh-service-type
                       (openssh-configuration
                        (openssh openssh-sans-x)
@@ -77,15 +65,15 @@
 
              (service nftables-service-type (nftables-configuration (ruleset (local-file "nftables.conf"))))
 
-                          (service containerd-service-type)
-                          (service docker-service-type)
-                          (service docker-container-service-type
-                                   (docker-service-configuration
-                                    (name 'jellyfin)
-                                    (container "jellyfin/jellyfin")
-                                    (volumes '(("config" . "/config")
-                                               ("cache" . "/cache")))
-                                    (mounts '(("/mnt" . "/opt")))))
+             (service containerd-service-type)
+             (service docker-service-type)
+             (service docker-container-service-type
+                      (docker-service-configuration
+                       (name 'jellyfin)
+                       (container "jellyfin/jellyfin")
+                       (volumes '(("config" . "/config")
+                                  ("cache" . "/cache")))
+                       (mounts '(("/mnt" . "/opt")))))
              (service qemu-binfmt-service-type (qemu-binfmt-configuration (platforms (lookup-qemu-platforms "aarch64"))))
 
              (simple-service 'paper-1.21.4 shepherd-root-service-type
@@ -106,17 +94,12 @@
                        (memq (service-kind service)
                              (list gdm-service-type sddm-service-type)))
                      (modify-services %desktop-services ;; note: avahi probably in here (as well as nm and wpa)
-                                      (guix-service-type config => (guix-configuration
-                                                                    (inherit config)
-                                                                    (channels %wolff-channels)
-                                                                    (substitute-urls
-                                                                     (append (list "https://substitutes.nonguix.org")
-                                                                             %default-substitute-urls))
-                                                                    (authorized-keys
-                                                                     (append (list (plain-file "non-guix.pub"
-"(public-key 
- (ecc 
-  (curve Ed25519)
-  (q #C1FD53E5D4CE971933EC50C9F307AE2171A2D3B52C804642A7A35F84F3A4EA98#)
-  )
- )")) %default-authorized-guix-keys )))))))))
+                       (guix-service-type config => (guix-configuration
+                                                     (inherit config)
+                                                     (channels %wolff-channels)
+                                                     (substitute-urls
+                                                      (append (list "https://substitutes.nonguix.org")
+                                                              %default-substitute-urls))
+                                                     (authorized-keys
+                                                      (append (list (local-file "non-guix.pub"))
+                                                              %default-authorized-guix-keys )))))))))
