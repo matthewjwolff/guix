@@ -76,6 +76,16 @@
                        (mounts '(("/mnt" . "/opt")))))
              (service qemu-binfmt-service-type (qemu-binfmt-configuration (platforms (lookup-qemu-platforms "aarch64"))))
 
+             (simple-service 'create-ab shepherd-root-service-type
+                             (list (shepherd-service (provision '(create-ab))
+                                                     (requirement '(user-processes networking))
+                                                     (auto-start? #f)
+                                                     (respawn? #f)
+                                                     (stop #~(make-kill-destructor #:grace-period 180))
+                                                     (start #~(make-forkexec-constructor
+                                                               (list (string-append #$openjdk9 "/bin/java") "-jar" "forge-1.16.5-36.2.34.jar")
+                                                               #:user "mjw" #:group "users" #:directory "/home/mjw/create-ab")))))
+
              (simple-service 'paper-1.21.4 shepherd-root-service-type
                              (list (shepherd-service (provision '(paper-1.21.4))
                                                      (requirement '(user-processes networking))
