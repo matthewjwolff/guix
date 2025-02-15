@@ -83,7 +83,8 @@
                                                      (respawn? #f)
                                                      (stop #~(make-kill-destructor #:grace-period 180))
                                                      (start #~(make-forkexec-constructor
-                                                               (list (string-append #$openjdk9 "/bin/java") "-jar" "forge-1.16.5-36.2.34.jar")
+                                                               ;; note: minecraft<1.20.3 needs an older lazymc
+                                                               (list (string-append #$lazymc-0.2.10 "/bin/lazymc"))
                                                                #:user "mjw" #:group "users" #:directory "/home/mjw/create-ab")))))
 
              (simple-service 'paper-1.21.4 shepherd-root-service-type

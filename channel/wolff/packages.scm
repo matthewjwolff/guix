@@ -16,7 +16,9 @@
   #:export (certbot-namecheap-hook
             mcrcon
             acme.sh
-            lazymc))
+            lazymc
+            lazymc-0.2.11
+            lazymc-0.2.10))
 
 (define certbot-namecheap-hook
   (package
@@ -117,15 +119,40 @@
      "This package provides Format is used by minecraft for the various files in which it saves data.")
     (license license:expat)))
 
-(define-public rust-minecraft-protocol-derive-0.0.0
+(define-public rust-minecraft-protocol-derive-for-lazymc-0.2.10
   (package
     (name "rust-minecraft-protocol-derive")
-    (version "0.0.0")
+    (version "edfdf876c0c21be02afdd885e3400983f3137ec9")
     (source
      (origin
        (method url-fetch)
-       (uri "https://github.com/timvisee/rust-minecraft-protocol/archive/4f93bb3438d25fd23410d7c30964971e59cfb327.tar.gz")
-       (file-name (string-append name "-" version ".tar.gz"))
+       (uri (string-append "https://github.com/timvisee/rust-minecraft-protocol/archive/" version  ".tar.gz"))
+       (file-name (string-append name "-0.0.0.tar.gz"))
+       (snippet #~(begin (use-modules (guix build utils)) (copy-recursively "protocol-derive" ".")))
+       (sha256
+        (base32 "027jlngw58ndhbdiv5hgklzrxay3d2l3n74ym4x2qdi2cdhhbc6y"))))
+    (build-system cargo-build-system)
+    (arguments
+     `(;;#:cargo-build-flags '("--release" "-v" "-v")
+       ;;                    #:install-source? #f
+       #:cargo-inputs (("rust-proc-macro2" ,rust-proc-macro2-1)
+                       ("rust-quote" ,rust-quote-1)
+                       ("rust-syn" ,rust-syn-1))))
+    (home-page "https://github.com/eihwaz/minecraft-protocol")
+    (synopsis "Derive macro for reading and writing Minecraft packets")
+    (description
+     "This package provides Derive macro for reading and writing Minecraft packets.")
+    (license license:expat)))
+
+(define-public rust-minecraft-protocol-derive-for-lazymc-0.2.11
+  (package
+    (name "rust-minecraft-protocol-derive")
+    (version "4f93bb3438d25fd23410d7c30964971e59cfb327")
+    (source
+     (origin
+       (method url-fetch)
+       (uri (string-append "https://github.com/timvisee/rust-minecraft-protocol/archive/" version  ".tar.gz"))
+       (file-name (string-append name "-0.0.0.tar.gz"))
        (snippet #~(begin (use-modules (guix build utils)) (copy-recursively "protocol-derive" ".")))
        (sha256
         (base32 "12lh0byy3q75dmv3nl1vyjv9ks6hdx396vyw8c584s8wrnv0x9va"))))
@@ -142,15 +169,50 @@
      "This package provides Derive macro for reading and writing Minecraft packets.")
     (license license:expat)))
 
-(define-public rust-minecraft-protocol-0.1
+(define-public rust-minecraft-protocol-for-lazymc-0.2.10
   (package
     (name "rust-minecraft-protocol")
-    (version "0.1.0")
+    (version "edfdf876c0c21be02afdd885e3400983f3137ec9")
     (source
      (origin
        (method url-fetch)
-       (uri "https://github.com/timvisee/rust-minecraft-protocol/archive/4f93bb3438d25fd23410d7c30964971e59cfb327.tar.gz")
-       (file-name (string-append name "-" version ".tar.gz"))
+       (uri (string-append "https://github.com/timvisee/rust-minecraft-protocol/archive/" version  ".tar.gz"))
+       (file-name (string-append name "-0.0.0.tar.gz"))
+       (snippet #~(begin
+                    (use-modules (guix build utils))
+                    ;; strip to only this package
+                    (copy-recursively "protocol" ".")
+                    ;; we vendor protocol-derive
+                    (substitute* "Cargo.toml"
+                      (("\\{ version = \"0\\.0\\.0\", path = \"\\.\\./protocol-derive\" \\}") "\"0.0.0\"")
+                      (("readme = \"\\.\\./README\\.md\"") ""))))
+       (sha256
+        (base32 "027jlngw58ndhbdiv5hgklzrxay3d2l3n74ym4x2qdi2cdhhbc6y"))))
+    (build-system cargo-build-system)
+    (arguments
+     `(#:tests? #f #:cargo-inputs (("rust-byteorder" ,rust-byteorder-1)
+                       ("rust-minecraft-protocol-derive" ,rust-minecraft-protocol-derive-for-lazymc-0.2.10)
+                       ("rust-named-binary-tag" ,rust-named-binary-tag-0.2)
+                       ("rust-num-derive" ,rust-num-derive-0.2)
+                       ("rust-num-traits" ,rust-num-traits-0.2)
+                       ("rust-serde" ,rust-serde-1)
+                       ("rust-serde-json" ,rust-serde-json-1)
+                       ("rust-uuid" ,rust-uuid-0.7))))
+    (home-page "https://github.com/eihwaz/minecraft-protocol")
+    (synopsis "Library for decoding and encoding Minecraft packets")
+    (description
+     "This package provides Library for decoding and encoding Minecraft packets.")
+    (license license:expat)))
+
+(define-public rust-minecraft-protocol-for-lazymc-0.2.11
+  (package
+    (name "rust-minecraft-protocol")
+    (version "4f93bb3438d25fd23410d7c30964971e59cfb327")
+    (source
+     (origin
+       (method url-fetch)
+       (uri (string-append "https://github.com/timvisee/rust-minecraft-protocol/archive/" version  ".tar.gz"))
+       (file-name (string-append name "-0.0.0.tar.gz"))
        (snippet #~(begin
                     (use-modules (guix build utils))
                     ;; strip to only this package
@@ -164,7 +226,7 @@
     (build-system cargo-build-system)
     (arguments
      `(#:tests? #f #:cargo-inputs (("rust-byteorder" ,rust-byteorder-1)
-                       ("rust-minecraft-protocol-derive" ,rust-minecraft-protocol-derive-0.0.0)
+                       ("rust-minecraft-protocol-derive" ,rust-minecraft-protocol-derive-for-lazymc-0.2.11)
                        ("rust-named-binary-tag" ,rust-named-binary-tag-0.2)
                        ("rust-num-derive" ,rust-num-derive-0.2)
                        ("rust-num-traits" ,rust-num-traits-0.2)
@@ -387,6 +449,28 @@ data in binary and string form.")
     (description "This package provides Derive macro for `std::error::Error`.")
     (license (list license:expat license:asl2.0))))
 
+(define-public rust-rcon-0.5
+  (package
+    (name "rust-rcon")
+    (version "0.5.2")
+    (source
+     (origin
+       (method url-fetch)
+       (uri (crate-uri "rcon" version))
+       (file-name (string-append name "-" version ".tar.gz"))
+       (sha256
+        (base32 "1rkihy95grrlw76d07pipj88w1aznhl3my2c5px91gc6dwadszvb"))))
+    (build-system cargo-build-system)
+    (arguments
+     `(#:cargo-inputs (("rust-async-std" ,rust-async-std-1)
+                       ("rust-bytes" ,rust-bytes-1)
+                       ("rust-err-derive" ,rust-err-derive-0.3))
+                      #:cargo-development-inputs (("rust-async-std" ,rust-async-std-1))))
+    (home-page "https://github.com/panicbit/rust-rcon")
+    (synopsis "An rcon protocol implementation")
+    (description "This package provides An rcon protocol implementation.")
+    (license (list license:expat license:asl2.0))))
+
 (define-public rust-rcon-0.6
   (package
     (name "rust-rcon")
@@ -411,7 +495,57 @@ data in binary and string form.")
     (license (list license:expat license:asl2.0))))
 
 
-(define lazymc
+
+(define lazymc-0.2.10
+  (package
+    (name "lazymc")
+    (version "0.2.10")
+    (source
+     (origin
+       (method url-fetch)
+       (uri (string-append "https://github.com/timvisee/lazymc/archive/refs/tags/v" version ".tar.gz"))
+       (snippet #~(begin
+                    (use-modules (guix build utils))
+                    (substitute* "Cargo.toml" (("\\{ git = ") "\"0.1\" #"))))
+       (sha256 "119wxj2q2zgc55nk1cvd74vxnlc8ri7nr66r3x42z076dldyqyrn")))
+    (build-system cargo-build-system)
+    (arguments `(#:cargo-inputs
+                 (("rust-anyhow" ,rust-anyhow-1)
+                  ("rust-base64" ,rust-base64-0.22)
+                  ("rust-bytes" ,rust-bytes-1)
+                  ("rust-chrono" ,rust-chrono-0.4)
+                  ("rust-clap" ,rust-clap-4)
+                  ("rust-colored" ,rust-colored-2)
+                  ("rust-derive-builder" ,rust-derive-builder-0.12)
+                  ("rust-dotenv" ,rust-dotenv-0.15)
+                  ("rust-flate2" ,rust-flate2-1)
+                  ("rust-futures" ,rust-futures-0.3)
+                  ("rust-log" ,rust-log-0.4)
+                  ("rust-minecraft-protocol" ,rust-minecraft-protocol-for-lazymc-0.2.10)
+                  ("rust-named-binary-tag" ,rust-named-binary-tag-0.2)
+                  ("rust-nix" ,rust-nix-0.28)
+                  ("rust-notify" ,rust-notify-4)
+                  ("rust-pretty-env-logger" ,rust-pretty-env-logger-0.4)
+                  ("rust-proxy-protocol" ,rust-proxy-protocol-0.5)
+                  ("rust-quartz-nbt" ,rust-quartz-nbt-0.2)
+                  ("rust-rand" ,rust-rand-0.8)
+                  ("rust-serde" ,rust-serde-1)
+                  ("rust-serde-json" ,rust-serde-json-1)
+                  ("rust-shlex" ,rust-shlex-1)
+                  ("rust-thiserror" ,rust-thiserror-1)
+                  ("rust-tokio" ,rust-tokio-1)
+                  ("rust-toml" ,rust-toml-0.5)
+                  ("rust-version-compare" ,rust-version-compare-0.1)
+                  ("rust-rcon" ,rust-rcon-0.5)
+                  ("rust-md5" ,rust-md-5-0.10)
+                  ("rust-uuid" ,rust-uuid-0.7)
+                  ("rust-libc" ,rust-libc-0.2))))
+    (synopsis "")
+    (description "")
+    (home-page "https://github.com/timvisee/lazymc")
+    (license license:gpl3)))
+
+(define lazymc-0.2.11
   (package
     (name "lazymc")
     (version "0.2.11")
@@ -436,7 +570,7 @@ data in binary and string form.")
                   ("rust-flate2" ,rust-flate2-1)
                   ("rust-futures" ,rust-futures-0.3)
                   ("rust-log" ,rust-log-0.4)
-                  ("rust-minecraft-protocol" ,rust-minecraft-protocol-0.1)
+                  ("rust-minecraft-protocol" ,rust-minecraft-protocol-for-lazymc-0.2.11)
                   ("rust-named-binary-tag" ,rust-named-binary-tag-0.2)
                   ("rust-nix" ,rust-nix-0.28)
                   ("rust-notify" ,rust-notify-4)
@@ -460,3 +594,5 @@ data in binary and string form.")
     (home-page "https://github.com/timvisee/lazymc")
     (license license:gpl3)))
 
+
+(define lazymc lazymc-0.2.11)
