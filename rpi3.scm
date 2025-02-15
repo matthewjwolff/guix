@@ -161,6 +161,7 @@ if your hardware is supported by one of the smaller firmware packages.")
                                                     (listen '("443 ssl"))
                                                     (root "")
                                                     (index '())
+                                                    (raw-content (list "add_header Strict-Transport-Security \"max-age=604800\" always;"))
                                                     (ssl-certificate "/etc/acme.sh/*.wolff.io_ecc/*.wolff.io.cer")
                                                     (ssl-certificate-key "/etc/acme.sh/*.wolff.io_ecc/*.wolff.io.key")
                                                     (locations (list
@@ -201,6 +202,7 @@ if your hardware is supported by one of the smaller firmware packages.")
                                                     (index '())
                                                     (ssl-certificate "/etc/acme.sh/*.wolff.io_ecc/*.wolff.io.cer")
                                                     (ssl-certificate-key "/etc/acme.sh/*.wolff.io_ecc/*.wolff.io.key")
+                                                    (raw-content (list "add_header Strict-Transport-Security \"max-age=604800\";"))
                                                     (locations (list
                                                                 (nginx-location-configuration
                                                                  (uri "/")
