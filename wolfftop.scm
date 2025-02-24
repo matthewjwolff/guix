@@ -6,7 +6,7 @@
              (wolff channels)
              (wolff packages)
              (wolff services))
-(use-service-modules desktop sddm xorg ssh networking shepherd virtualization docker)
+(use-service-modules desktop sddm xorg ssh networking shepherd virtualization docker admin)
 (use-package-modules gnome ssh admin fonts java)
 (use-package-modules qt xorg tmux linux package-management)
 
@@ -97,6 +97,13 @@
                                                      (start #~(make-forkexec-constructor
                                                                (list (string-append #$lazymc "/bin/lazymc"))
                                                                #:user "mjw" #:group "users" #:directory "/home/mjw/paper-1.21.4")))))
+
+             (service unattended-upgrade-service-type
+                      (unattended-upgrade-configuration
+                       (schedule "30 1 * * *")
+                       (channels #~(list #$@(map channel->code %wolff-channels)))
+                       (operating-system-file
+                        (file-append (local-file "." "config-dir" #:recursive? #t) "/wolfftop.scm"))))
 
 
              ;; Remove GDM if it's among %DESKTOP-SERVICES; on other
