@@ -6,7 +6,7 @@
              (wolff channels)
              (wolff packages)
              (wolff services))
-(use-service-modules desktop sddm xorg ssh networking shepherd virtualization docker admin)
+(use-service-modules desktop sddm xorg ssh networking shepherd virtualization docker admin containers)
 (use-package-modules gnome ssh admin fonts java)
 (use-package-modules qt xorg tmux linux package-management)
 
@@ -65,16 +65,43 @@
 
              (service nftables-service-type (nftables-configuration (ruleset (local-file "nftables.conf"))))
 
+             (service git-repo-service-type
+                      '(("pokerogue" . "https://github.com/pagefaultgames/pokerogue")
+                        ("mario-builder-64" . "https://github.com/rovertronic/Mario-Builder-64")
+                        ("space-station-14" . "https://github.com/space-wizards/space-station-14")
+                        ("relics-of-the-past" . "https://github.com/Relics-Of-The-Past/Relics-of-the-Past-Release")
+                        ("nsmb-mariovsluigi" . "https://github.com/ipodtouch0218/NSMB-MarioVsLuigi/")
+                        ("project-plus-ex" . "https://github.com/KingJigglypuff/project-plus-ex")
+                        ("mk64-hd" . "https://github.com/ghostlydark/mk64-hd")
+                        ("hbc" . "https://github.com/fail0verflow/hbc")
+                        ("libogc" . "https://github.com/devkitPro/libogc")
+                        ("mario-eclipse" . "https://github.com/JoshuaMKW/Super-Mario-Eclipse")))
+
+
              (service containerd-service-type)
+
+
+             (service oci-container-service-type
+                      (list (oci-container-configuration
+                             (image "jellyfin/jellyfin")
+                             (auto-start? #f)
+                             (network "host")
+                             (ports '(("8096" . "8096")))
+                             (volumes '(("config" . "/config")
+                                        ("cache" . "/cache")))
+                             (extra-arguments '("--mount" "type=bind,source=/mnt,target=/opt")))))
              (service docker-service-type)
-             (service docker-container-service-type
-                      (docker-service-configuration
-                       (name 'jellyfin)
-                       (container "jellyfin/jellyfin")
-                       (volumes '(("config" . "/config")
-                                  ("cache" . "/cache")))
-                       (mounts '(("/mnt" . "/opt")))))
              (service qemu-binfmt-service-type (qemu-binfmt-configuration (platforms (lookup-qemu-platforms "aarch64"))))
+
+             (simple-service 'atm10 shepherd-root-service-type
+                             (list (shepherd-service (provision '(atm10))
+                                                     (requirement '(user-processes networking))
+                                                     (auto-start? #f)
+                                                     (respawn? #f)
+                                                     (stop #~(make-kill-destructor #:grace-period 180))
+                                                     (start #~(make-forkexec-constructor
+                                                               (list (string-append #$lazymc "/bin/lazymc"))
+                                                               #:user "mjw" #:group "users" #:directory "/home/mjw/atm10")))))
 
              (simple-service 'create-ab shepherd-root-service-type
                              (list (shepherd-service (provision '(create-ab))

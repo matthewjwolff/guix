@@ -217,7 +217,8 @@ if your hardware is supported by one of the smaller firmware packages.")
                                                                              "auth_basic_user_file /srv/htpasswd;"))))))))))
                          (service acme.sh-service-type
                                   (acme.sh-service-configuration
-                                   (certs '("*.wolff.io"))))
+                                   (certs '("*.wolff.io"))
+                                   (dns-provider "dns_cf")))
                          (service openssh-service-type
                                   (openssh-configuration
                                    (password-authentication? #t)

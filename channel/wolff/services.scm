@@ -11,8 +11,6 @@
   #:use-module (wolff packages)
   #:export (acme.sh-service-type
             acme.sh-service-configuration
-            docker-service-configuration
-            docker-container-service-type
             docker-compose-service-configuration
             docker-compose-service-type
             git-repo-service-type))
@@ -21,7 +19,8 @@
 (define-record-type* <acme.sh-service-configuration>
   acme.sh-service-configuration make-acme.sh-service-configuration
   acme.sh-service-configuration?
-  (certs acme.sh-configuration-certs))
+  (certs acme.sh-configuration-certs)
+  (dns-provider acme.sh-configuration-dns-provider))
 
 (define (acme.sh-activation config)
   #~(begin
@@ -35,17 +34,13 @@
         (use-modules (srfi srfi-26)) ;; cut
         (use-modules (srfi srfi-1)) ;; any
         (unless (any (cut string-prefix? cert-name <>) dir-contents)
-          (system* (string-append #$acme.sh "/bin/acme.sh") "--config-home" "/etc/acme.sh" "issue" "-d" cert-name "--dns" "dns_namecheap" "--server" "letsencrypt")))
+          (system* (string-append #$acme.sh "/bin/acme.sh") "--config-home" "/etc/acme.sh" "issue" "-d" cert-name "--dns" #$(acme.sh-configuration-dns-provider config) "--server" "letsencrypt")))
       (map issue-cert #$(acme.sh-configuration-certs config))))
 
 (define (acme.sh-cron config)
-  ;; TODO is config necessary?
   ;; TODO for now, hack together a job with coreutils in PATH
   ;; because copy-build-system doesn't send a cross compiled coreutils (implicit input from gnu-build-system)
   ;; can't use (system) because guile doesn't have a sh set up i guess
-  ;; TODO this works for --cron, but surely won't work for all the other undocumented dependencies acme.sh has
-      ;; their dockerfile lists some dependencies via apk
-      ;; it might work? the board was able to pull its own cert when run interactively
   ;; note: these ungexps pull the right dependencies (cross compiled grep, coreutils)
   ;; remember, only hand-writing the environment because copy-build-system pulls native dependencies instead of cross-compiled dependencies
       ;; it really should be in the package, because these *are* the dependencies of the script
@@ -71,45 +66,6 @@
                 (service-extension mcron-service-type acme.sh-cron)
                 ;; TODO make sure acme.sh is in the system profile
                 ))))
-
-(define-record-type* <docker-service-configuration>
-  docker-service-configuration make-docker-service-configuration
-  docker-service?
-  (name docker-service-name)
-  (container docker-service-container)
-  (auto-start? docker-service-auto-start? (default #f))
-  (respawn? docker-service-respawn? (default #f))
-  ;; TODO does not support readonly mounts
-  (volumes docker-service-volumes (default '()))
-  (mounts docker-service-mounts (default '())))
-
-(define (docker-service config)
-  (define (volume-to-arg volume)
-    (list "--volume" (string-append (car volume) ":" (cdr volume))))
-  (define (mount-to-arg mount)
-    (list "--mount" (string-append "type=bind,source=" (car mount) ",target=" (cdr mount))))
-  (list (shepherd-service
-         (provision `(,(docker-service-name config)))
-         (requirement '(user-processes networking dockerd))
-         (auto-start? (docker-service-auto-start? config))
-         (respawn? (docker-service-respawn? config))
-         (start #~(make-forkexec-constructor
-                   ;; TODO if the container was started and stopped, run attempts to recreate the container, which will fail. need to either delete and recreate the container, or reuse the existing container
-                   (list (string-append #$docker-cli "/bin/docker")
-                         "run"
-                         "--rm"
-                         "--name" #$(symbol->string (docker-service-name config))
-                         "--net=host" ;; this doesn't support custom networks, you'd probably want a docker-compose file for that
-                         #$@(apply append (map volume-to-arg (docker-service-volumes config)))
-                         #$@(apply append (map mount-to-arg (docker-service-mounts config)))
-                         #$(docker-service-container config))))
-         (stop #~(make-kill-destructor)))))
-
-(define docker-container-service-type
-  (service-type
-   (name 'docker-service)
-   (description "A docker service")
-   (extensions (list (service-extension shepherd-root-service-type docker-service))))) ;; no default value
 
 ;; see guix/records.scm for info about define-record-type*
 ;; summary: normal is (define-record-type <type> (constructor fieldname...) predicate (fieldname accessor [modifier])...)
