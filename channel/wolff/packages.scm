@@ -6,19 +6,60 @@
   #:use-module (guix git-download)
   #:use-module (guix download)
   #:use-module (guix packages)
+  #:use-module (gnu packages base)
   #:use-module (gnu packages crates-io)
   #:use-module (gnu packages crates-compression)
   #:use-module (gnu packages crates-check)
   #:use-module (gnu packages crates-crypto)
+  #:use-module (gnu packages curl)
   #:use-module (gnu packages bash)
+  #:use-module (gnu packages web)
+  #:use-module (gnu packages dns)
   #:use-module (guix records)
   #:use-module ((guix licenses) #:prefix license:)
-  #:export (certbot-namecheap-hook
+  #:export (certbot-cloudflare-hook
+            certbot-namecheap-hook
             mcrcon
             acme.sh
             lazymc
             lazymc-0.2.11
             lazymc-0.2.10))
+
+(define certbot-cloudflare-hook
+  (package
+   (name "certbot-cloudflare-hook")
+   (version "c93e98794b28e9ea991aa8f65c3fa9c3bcab8921")
+   (source
+    (origin
+     (sha256 "1l90ysbf6i00ii99qwfzid22i59z1qfq32zlxlr9yzrzxz72hng6")
+     (method git-fetch)
+     (uri (git-reference
+           (url "https://github.com/matthewjwolff/certbot-dns-challenge-cloudflare-hooks/")
+           (commit version)))))
+   (build-system copy-build-system)
+   (arguments (list
+               #:phases
+               #~(modify-phases %standard-phases
+                                (add-after 'install 'wrap-scripts
+                                           (lambda* (#:key inputs outputs #:allow-other-keys)
+                                             (display inputs)
+                                             (wrap-program (search-input-file outputs "cloudflare-clean-dns.sh") `("PATH" ":" = ,(list
+                                                                                                      (string-append (assoc-ref inputs "curl") "/bin")
+                                                                                                      (string-append (assoc-ref inputs "jq") "/bin")
+                                                                                                      (string-append (assoc-ref inputs "sed") "/bin")
+                                                                                                      (string-append (assoc-ref inputs "bind") "/bin"))))
+                                             (wrap-program (search-input-file outputs "cloudflare-update-dns.sh") `("PATH" ":" = ,(list
+                                                                                                      (string-append (assoc-ref inputs "curl") "/bin")
+                                                                                                      (string-append (assoc-ref inputs "jq") "/bin")
+                                                                                                      (string-append (assoc-ref inputs "sed") "/bin")
+                                                                                                      (string-append (assoc-ref inputs "grep") "/bin")
+                                                                                                      (string-append (assoc-ref inputs "bind") "/bin")))))))))
+   (inputs (list curl jq sed grep (list isc-bind "utils")))
+   (synopsis "")
+   (license license:gpl3)
+   (description "")
+   (home-page "")))
+
 
 (define certbot-namecheap-hook
   (package
