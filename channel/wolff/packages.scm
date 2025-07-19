@@ -43,18 +43,9 @@
                                 (add-after 'install 'wrap-scripts
                                            (lambda* (#:key inputs outputs #:allow-other-keys)
                                              (display inputs)
-                                             (wrap-program (search-input-file outputs "cloudflare-clean-dns.sh") `("PATH" ":" = ,(list
-                                                                                                      (string-append (assoc-ref inputs "curl") "/bin")
-                                                                                                      (string-append (assoc-ref inputs "jq") "/bin")
-                                                                                                      (string-append (assoc-ref inputs "sed") "/bin")
-                                                                                                      (string-append (assoc-ref inputs "bind") "/bin"))))
-                                             (wrap-program (search-input-file outputs "cloudflare-update-dns.sh") `("PATH" ":" = ,(list
-                                                                                                      (string-append (assoc-ref inputs "curl") "/bin")
-                                                                                                      (string-append (assoc-ref inputs "jq") "/bin")
-                                                                                                      (string-append (assoc-ref inputs "sed") "/bin")
-                                                                                                      (string-append (assoc-ref inputs "grep") "/bin")
-                                                                                                      (string-append (assoc-ref inputs "bind") "/bin")))))))))
-   (inputs (list curl jq sed grep (list isc-bind "utils")))
+                                             (wrap-program (search-input-file outputs "cloudflare-clean-dns.sh") `("PATH" ":" = ,(map (compose (lambda (x) (string-append x "/bin")) cdr) inputs)))
+                                             (wrap-program (search-input-file outputs "cloudflare-update-dns.sh") `("PATH" ":" = ,(map (compose (lambda (x) (string-append x "/bin")) cdr) inputs))))))))
+   (inputs (list coreutils curl jq sed grep (list isc-bind "utils")))
    (synopsis "")
    (license license:gpl3)
    (description "")
