@@ -7,6 +7,7 @@
   #:use-module (guix download)
   #:use-module (guix packages)
   #:use-module (gnu packages base)
+  #:use-module (gnu packages certs)
   #:use-module (gnu packages crates-io)
   #:use-module (gnu packages crates-compression)
   #:use-module (gnu packages crates-check)
@@ -42,9 +43,13 @@
                #~(modify-phases %standard-phases
                                 (add-after 'install 'wrap-scripts
                                            (lambda* (#:key inputs outputs #:allow-other-keys)
-                                             (display inputs)
-                                             (wrap-program (search-input-file outputs "cloudflare-clean-dns.sh") `("PATH" ":" = ,(map (compose (lambda (x) (string-append x "/bin")) cdr) inputs)))
-                                             (wrap-program (search-input-file outputs "cloudflare-update-dns.sh") `("PATH" ":" = ,(map (compose (lambda (x) (string-append x "/bin")) cdr) inputs))))))))
+                                             (define vars (list
+                                                           ;; put program inputs in $PATH
+                                                           `("PATH" ":" = ,(map (compose (lambda (x) (string-append x "/bin")) cdr) inputs))
+                                                           ;; set certs so curl can use https
+                                                           `("SSL_CERT_DIR" ":" = (,(string-append #$nss-certs "/etc/ssl/certs/")))))
+                                             (apply wrap-program (search-input-file outputs "cloudflare-clean-dns.sh") vars)
+                                             (apply wrap-program (search-input-file outputs "cloudflare-update-dns.sh") vars))))))
    (inputs (list coreutils curl jq sed grep (list isc-bind "utils")))
    (synopsis "")
    (license license:gpl3)
