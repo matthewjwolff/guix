@@ -14,11 +14,13 @@
   #:use-module (gnu packages crates-crypto)
   #:use-module (gnu packages curl)
   #:use-module (gnu packages bash)
+  #:use-module (gnu packages nss)
   #:use-module (gnu packages web)
   #:use-module (gnu packages dns)
   #:use-module (guix records)
   #:use-module ((guix licenses) #:prefix license:)
-  #:export (certbot-cloudflare-hook
+  #:export (archlinux-kernel-bin
+            certbot-cloudflare-hook
             certbot-namecheap-hook
             mcrcon
             acme.sh
@@ -26,6 +28,30 @@
             lazymc-0.2.11
             lazymc-0.2.10))
 
+(define archlinux-kernel-bin
+(package
+  (name "archlinux-kernel")
+  (version "6.16-1")
+  (source (origin
+           (method url-fetch)
+           (uri (string-append "http://mirror.archlinuxarm.org/aarch64/core/linux-aarch64-" version "-aarch64.pkg.tar.xz"))
+           (sha256
+            (base32
+             "041b6m7j9p275capnvg5gqnwxnki35mvgq1g4mg1rx6v6l08pp52"))))
+  (arguments
+   '(#:install-plan
+     ;; TODO this is specific to rpi 3+
+       '(("boot/Image" "Image"))))
+        ;; ("boot/dtbs" "dtbs")
+         ;; TODO embeds kernel version
+         ;;("usr/lib/modules/6.16.0-1-aarch64-ARCH" "lib/modules/6.16.0-1-aarch64-ARCH"))))
+  (build-system copy-build-system)
+  (synopsis "Arch Linux ARM's kernel package")
+  (description "Pre-compiled binaries of Linux.")
+  (home-page "https://archlinuxarm.org")
+  (supported-systems '("aarch64-linux"))
+  (license
+    (list license:gpl2))))
 (define certbot-cloudflare-hook
   (package
    (name "certbot-cloudflare-hook")
