@@ -8,10 +8,6 @@
   #:use-module (guix packages)
   #:use-module (gnu packages base)
   #:use-module (gnu packages certs)
-  #:use-module (gnu packages crates-io)
-  #:use-module (gnu packages crates-compression)
-  #:use-module (gnu packages crates-check)
-  #:use-module (gnu packages crates-crypto)
   #:use-module (gnu packages curl)
   #:use-module (gnu packages bash)
   #:use-module (gnu packages nss)
@@ -23,10 +19,7 @@
             certbot-cloudflare-hook
             certbot-namecheap-hook
             mcrcon
-            acme.sh
-            lazymc
-            lazymc-0.2.11
-            lazymc-0.2.10))
+            acme.sh))
 
 (define archlinux-kernel-bin
 (package
@@ -157,6 +150,8 @@
    (license license:gpl3)
    (description "Acme.sh is a pure shell implementation of the ACME protocol.")
    (home-page "https://github.com/acmesh-official/acme.sh")))
+
+#|
 
 (define-public rust-named-binary-tag-0.2
   (package
@@ -659,3 +654,4 @@ data in binary and string form.")
 
 
 (define lazymc lazymc-0.2.11)
+|#
