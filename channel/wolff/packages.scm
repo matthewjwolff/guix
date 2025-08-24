@@ -55,10 +55,10 @@
 (define certbot-cloudflare-hook
   (package
    (name "certbot-cloudflare-hook")
-   (version "c93e98794b28e9ea991aa8f65c3fa9c3bcab8921")
+   (version "a2f718dfe19292bedff570c41a92ff226252e777")
    (source
     (origin
-     (sha256 "1l90ysbf6i00ii99qwfzid22i59z1qfq32zlxlr9yzrzxz72hng6")
+     (sha256 "02qlby56gr37l3vzbjqr294jg9ljcvj2bia49s4rqs3x2cf0li7k")
      (method git-fetch)
      (uri (git-reference
            (url "https://github.com/matthewjwolff/certbot-dns-challenge-cloudflare-hooks/")
