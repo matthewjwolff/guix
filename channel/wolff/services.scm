@@ -20,7 +20,8 @@
 
 (define (anubis-activation config)
   #~(unless (file-exists? "/run/anubis")
-      (mkdir "/run/anubis")))
+      (mkdir "/run/anubis")
+      (chown "/run/anubis" (passwd:uid (getpw "nginx")) (passwd:gid (getpw "nginx")))))
 
 (define (anubis-service config)
   (list (shepherd-service (provision '(anubis))
@@ -31,7 +32,9 @@
                                                                     "-bind" "/run/anubis/instance.sock"
                                                                     "-bind-network" "unix"
                                                                     "-target" "unix:///var/run/nginx/nginx.sock"
-                                                                    )))
+                                                                    )
+                                                              ;; instance socket needs to be readable by nginx
+                                                              #:user "nginx" #:group "nginx"))
                           (stop #~(make-kill-destructor)))))
 
 (define anubis-service-type
