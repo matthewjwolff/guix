@@ -41,6 +41,7 @@
   (service-type
    (name 'anubis)
    (description "Anubis anti-crawler proxy")
+   (default-value '())
    (extensions (list (service-extension shepherd-root-service-type anubis-service)
                      (service-extension activation-service-type anubis-activation)))))
 

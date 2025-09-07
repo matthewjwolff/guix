@@ -93,8 +93,14 @@
                         ("libogc" . "https://github.com/devkitPro/libogc")
                         ("smashremix" . "https://github.com/JSsixtyfour/smashremix")
                         ("mario-eclipse" . "https://github.com/JoshuaMKW/Super-Mario-Eclipse")))
+
+             (service anubis-service-type)
              (service nginx-service-type
                       (nginx-configuration
+                       (upstream-blocks (list
+                                         (nginx-upstream-configuration
+                                          (name "anubis")
+                                          (servers (list "unix:/run/anubis/instance.sock")))))
                        (server-blocks (list
                                        (nginx-server-configuration
                                         (server-name (list "jellyfin.wolff.io"))
@@ -116,16 +122,34 @@
                                                                  "proxy_set_header Upgrade $http_upgrade;"
                                                                  "proxy_set_header Connection $http_connection;"
                                                                  "proxy_buffering off;"))))))
+
+                                       ;; tls stripper, passes to anubis
+                                       (nginx-server-configuration
+                                        (listen '("443 ssl"))
+                                        (server-name (list "files.wolff.io"))
+                                        (ssl-certificate "/etc/certs/wolff.io/fullchain.pem")
+                                        (ssl-certificate-key "/etc/certs/wolff.io/privkey.pem")
+                                        (root "")
+                                        (index '())
+                                        (locations (list
+                                                    (nginx-location-configuration
+                                                     (uri "/")
+                                                     (body (list "proxy_set_header Host $host;"
+                                                                 "proxy_set_header X-Real-IP $remote_addr;"
+                                                                 "proxy_set_header X-Http-Version $server_protocol;"
+                                                                 "proxy_pass http://anubis;"))))))
+                                       ;; real fileserver
                                        (nginx-server-configuration
                                         (server-name (list "files.wolff.io"))
-                                        (listen '("443 ssl"))
+                                        (listen '("unix:/var/run/nginx/nginx.sock"))
                                         ;; don't know what these two do, but it wasnt in the original config
                                         ;; checking with web.scm, these are the sentinel values for each that disable the config line
                                         (root "")
                                         (index '())
-                                        (ssl-certificate "/etc/certs/wolff.io/fullchain.pem")
-                                        (ssl-certificate-key "/etc/certs/wolff.io/privkey.pem")
-                                        (raw-content (list "add_header Strict-Transport-Security \"max-age=604800\";"))
+                                        (raw-content (list
+                                                      ;;"set_real_ip_from unix:;"
+                                                      ;;"real_ip_header X-Real-IP;"
+                                                      "add_header Strict-Transport-Security \"max-age=604800\";"))
                                         (locations (list
                                                     (nginx-location-configuration
                                                      (uri "/")
