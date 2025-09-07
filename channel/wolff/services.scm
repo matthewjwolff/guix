@@ -8,13 +8,38 @@
   #:use-module (gnu services mcron)
   #:use-module (guix records)
   #:use-module (guix gexp)
+  #:use-module (rosenthal packages web)
   #:use-module (wolff packages)
   #:export (acme.sh-service-type
             acme.sh-service-configuration
+            anubis-service-type
             docker-compose-service-configuration
             docker-compose-service-type
             git-repo-service-type))
 
+
+(define (anubis-activation config)
+  #~(unless (file-exists? "/run/anubis")
+      (mkdir "/run/anubis")))
+
+(define (anubis-service config)
+  (list (shepherd-service (provision '(anubis))
+                          (requirement '(user-processes networking))
+                          (auto-start? #t)
+                          (respawn? #t)
+                          (start #~(make-forkexec-constructor (list (string-append #$anubis-anti-crawler "/bin/anubis")
+                                                                    "-bind" "/run/anubis/instance.sock"
+                                                                    "-bind-network" "unix"
+                                                                    "-target" "unix:///var/run/nginx/nginx.sock"
+                                                                    )))
+                          (stop #~(make-kill-destructor)))))
+
+(define anubis-service-type
+  (service-type
+   (name 'anubis)
+   (description "Anubis anti-crawler proxy")
+   (extensions (list (service-extension shepherd-root-service-type anubis-service)
+                     (service-extension activation-service-type anubis-activation)))))
 
 (define-record-type* <acme.sh-service-configuration>
   acme.sh-service-configuration make-acme.sh-service-configuration
@@ -24,18 +49,19 @@
 
 (define (acme.sh-activation config)
   #~(begin
-      ;; TODO sops not built, so have to manage the secrets file manually
-      ;;(mkdir-p "/etc/acme.sh")
-      ;;(open-file "/etc/acme.sh/account.conf" "w")
+      (mkdir-p "/etc/acme.sh")
+      (open-file "/etc/acme.sh/account.conf" "w")
       ;; put things in account.conf
       (use-modules (ice-9 ftw)) ;; scandir
       (define dir-contents (scandir "/etc/acme.sh"))
       (define (issue-cert cert-name)
-        (use-modules (srfi srfi-26)) ;; cut
         (use-modules (srfi srfi-1)) ;; any
-        (unless (any (cut string-prefix? cert-name <>) dir-contents)
-          (system* (string-append #$acme.sh "/bin/acme.sh") "--config-home" "/etc/acme.sh" "issue" "-d" cert-name "--dns" #$(acme.sh-configuration-dns-provider config) "--server" "letsencrypt")))
-      (map issue-cert #$(acme.sh-configuration-certs config))))
+        ;; cut doesn't work with gexp (unbound variable <>)
+        (unless (any (lambda (obj) (string-prefix? cert-name obj)) dir-contents)
+          ;; add --force to allow use with sudo
+          (system* (string-append #$acme.sh "/bin/acme.sh") "--config-home" "/etc/acme.sh" "--issue" "-d" cert-name "--dns" #$(acme.sh-configuration-dns-provider config) "--server" "letsencrypt" "--force")))
+      (map issue-cert (list #$@(acme.sh-configuration-certs config)))))
+
 
 (define (acme.sh-cron config)
   ;; TODO for now, hack together a job with coreutils in PATH
@@ -62,7 +88,7 @@
    (name 'acme.sh-service)
    (description "Manage certificates using acme.sh")
    (extensions (list
-                ;;(service-extension activation-service-type acme.sh-activation)
+                (service-extension activation-service-type acme.sh-activation)
                 (service-extension mcron-service-type acme.sh-cron)
                 ;; TODO make sure acme.sh is in the system profile
                 ))))

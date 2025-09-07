@@ -1,4 +1,9 @@
 (channel
  (version 0)
  (directory "channel")
+ (dependencies
+  (channel
+   (name rosenthal)
+   (url "https://codeberg.org/hako/rosenthal.git")
+   (branch "trunk")))
  (keyring-reference "master"))

@@ -4,6 +4,15 @@
 
 (define %wolff-channels
   (cons* (channel
+          (name 'rosenthal)
+          (url "https://codeberg.org/hako/rosenthal.git")
+          (branch "trunk")
+          (introduction
+           (make-channel-introduction
+            "7677db76330121a901604dfbad19077893865f35"
+            (openpgp-fingerprint
+             "13E7 6CD6 E649 C28C 3385  4DF5 5E5A A665 6149 17F7"))))
+         (channel
           (name 'sops-guix)
           (url "https://github.com/fishinthecalculator/sops-guix")
           (branch "main")
