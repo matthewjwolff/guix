@@ -92,7 +92,8 @@
                         ("hbc" . "https://github.com/fail0verflow/hbc")
                         ("libogc" . "https://github.com/devkitPro/libogc")
                         ("smashremix" . "https://github.com/JSsixtyfour/smashremix")
-                        ("mario-eclipse" . "https://github.com/JoshuaMKW/Super-Mario-Eclipse")))
+                        ("mario-eclipse" . "https://github.com/JoshuaMKW/Super-Mario-Eclipse")
+                        ("eden-emu" . "https://git.eden-emu.dev/eden-emu/eden")))
 
              (service anubis-service-type)
              (service nginx-service-type
